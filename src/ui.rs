@@ -448,42 +448,84 @@ impl Dashboard {
         let start_y = 2;
         let content_height = height.saturating_sub(4); // Leave space for header and footer
 
+        // Draw Sartre quote
+        let quote = "\"L'homme est condamné à être libre.\" - Sartre";
+        let quote_x = if width as usize > quote.len() {
+            (width as usize - quote.len()) / 2
+        } else {
+            2
+        } as u16;
+        
+        execute!(
+            io::stdout(),
+            MoveTo(quote_x, start_y),
+            SetForegroundColor(Color::DarkGrey),
+            Print(quote),
+            ResetColor
+        )?;
+
+        let programs_start_y = start_y + 2;
+
         if programs.is_empty() {
+            let empty_message = "No programs configured. Press 'a' to add a program.";
+            let start_x = if width as usize > empty_message.len() { 
+                (width as usize - empty_message.len()) / 2 
+            } else { 
+                2 
+            } as u16;
+            
             execute!(
                 io::stdout(),
-                MoveTo(2, start_y + 2),
-                Print("No programs configured. Press 'a' to add a program.")
+                MoveTo(start_x, programs_start_y + 2),
+                Print(empty_message)
             )?;
         } else {
+            // Calculate the maximum width needed for centering
+            let max_program_width = programs.iter().map(|program| {
+                let sudo_indicator = if program.run_with_sudo { " [SUDO]" } else { "" };
+                let output_indicator = if program.show_output { " [OUT]" } else { "" };
+                let display_text = if let Some(ref desc) = program.description {
+                    format!("[ {}{}{} - {} ]", program.display_name, sudo_indicator, output_indicator, desc)
+                } else {
+                    format!("[ {}{}{} ]", program.display_name, sudo_indicator, output_indicator)
+                };
+                display_text.len()
+            }).max().unwrap_or(0);
+
+            let start_x = if width as usize > max_program_width { 
+                (width as usize - max_program_width) / 2 
+            } else { 
+                2 
+            } as u16;
+
             for (i, program) in programs.iter().enumerate() {
                 if i < content_height as usize {
-                    let y = start_y + i as u16;
+                    let y = programs_start_y + i as u16;
                     let is_selected = i == self.selected_index;
-
-                    if is_selected {
-                        execute!(
-                            io::stdout(),
-                            MoveTo(0, y),
-                            SetBackgroundColor(Color::Yellow),
-                            SetForegroundColor(Color::Black),
-                        )?;
-                    }
 
                     let sudo_indicator = if program.run_with_sudo { " [SUDO]" } else { "" };
                     let output_indicator = if program.show_output { " [OUT]" } else { "" };
                     let display_text = if let Some(ref desc) = program.description {
-                        format!("  {}{}{} - {}", program.display_name, sudo_indicator, output_indicator, desc)
+                        format!("[ {}{}{} - {} ]", program.display_name, sudo_indicator, output_indicator, desc)
                     } else {
-                        format!("  {}{}{}", program.display_name, sudo_indicator, output_indicator)
+                        format!("[ {}{}{} ]", program.display_name, sudo_indicator, output_indicator)
                     };
 
-                    execute!(
-                        io::stdout(),
-                        Print(format!("{:width$}", display_text, width = width as usize)),
-                    )?;
-
                     if is_selected {
-                        execute!(io::stdout(), ResetColor)?;
+                        execute!(
+                            io::stdout(),
+                            MoveTo(start_x, y),
+                            SetBackgroundColor(Color::Yellow),
+                            SetForegroundColor(Color::Black),
+                            Print(&display_text),
+                            ResetColor
+                        )?;
+                    } else {
+                        execute!(
+                            io::stdout(),
+                            MoveTo(start_x, y),
+                            Print(&display_text)
+                        )?;
                     }
                 }
             }
@@ -587,18 +629,18 @@ impl Dashboard {
             "RDash - Vim-like Server Dashboard",
             "",
             "NAVIGATION:",
-            "  j, ↓        Move down",
-            "  k, ↑        Move up",
-            "  Enter       Launch selected program",
+            "  [ j ] [ ↓ ]        Move down",
+            "  [ k ] [ ↑ ]        Move up",
+            "  [ Enter ]          Launch selected program",
             "",
             "PROGRAM MANAGEMENT:",
-            "  a           Add new program",
-            "  d           Delete selected program",
-            "  r           Reload configuration",
+            "  [ a ]              Add new program",
+            "  [ d ]              Delete selected program",
+            "  [ r ]              Reload configuration",
             "",
             "OTHER:",
-            "  h, F1       Show this help",
-            "  q, Esc      Quit",
+            "  [ h ] [ F1 ]       Show this help",
+            "  [ q ] [ Esc ]      Quit",
             "",
             "CONFIGURATION:",
             "  Config file: ~/.config/rdash/config.json",
@@ -607,11 +649,15 @@ impl Dashboard {
             "Press any key to return...",
         ];
 
+        // Calculate center position for content
+        let content_width = help_lines.iter().map(|line| line.len()).max().unwrap_or(0) as u16;
+        let start_x = if width > content_width { (width - content_width) / 2 } else { 2 };
+
         for (i, line) in help_lines.iter().enumerate() {
             if i + 2 < height as usize {
                 execute!(
                     io::stdout(),
-                    MoveTo(2, 2 + i as u16),
+                    MoveTo(start_x, 2 + i as u16),
                     Print(line)
                 )?;
             }
