@@ -16,8 +16,15 @@ A Vim-inspired terminal dashboard for managing and launching your server program
 
 ## Installation
 
+### From Source
 ```bash
+git clone https://github.com/rafaelsieber/rdash.git
+cd rdash
 cargo build --release
+```
+
+### Install to System
+```bash
 cargo install --path .
 ```
 
@@ -114,7 +121,7 @@ Requirements:
 - Rust 1.70+ (2021 edition)
 
 ```bash
-git clone <repository>
+git clone https://github.com/rafaelsieber/rdash.git
 cd rdash
 cargo build --release
 ```
@@ -129,4 +136,17 @@ cargo build --release
 
 ## License
 
-[Add your license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Acknowledgments
+
+- Built with [crossterm](https://github.com/crossterm-rs/crossterm) for cross-platform terminal handling
+- Inspired by Vim's keyboard-driven interface philosophy
